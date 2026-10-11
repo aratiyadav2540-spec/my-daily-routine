@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Daily Routine 🌸</title>
+  <link rel="manifest" href="./manifest.json">
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;padding:16px;
+ font-family:Arial,sans-serif;
+ color:#302541;
+ background:linear-gradient(135deg,#fff5f7,#f5efff);
+}
+h1{text-align:center;color:#a33f79;font-size:30px}
+.subtitle{text-align:center;color:#82617c}
+.card{
+ background:white;padding:16px;margin:15px 0;
+ border-radius:22px;border:1px solid #f2d8e6;
+ box-shadow:0 4px 14px #c9a8c51a;
+}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{text-align:center;padding:12px 4px;border-radius:15px;background:#fff0f6}
+.stat:nth-child(2){background:#eee7ff}
+.stat:nth-child(3){background:#e8f5e2}
+.stat strong{display:block;font-size:23px}
+.stat small{font-size:12px}
+input[type=date]{padding:9px;border:1px solid #e5bfd5;border-radius:10px}
+.progress{height:12px;background:#eee5ed;border-radius:20px;margin-top:16px;overflow:hidden}
+#bar{height:100%;width:0;background:#e995c1;transition:.2s}
+.task{
+ display:flex;align-items:center;gap:12px;
+ padding:15px 10px;margin:9px 0;border-radius:18px;
+ background:#fff0f6;
+}
+.task:nth-child(6n+2){background:#eee8ff}
+.task:nth-child(6n+3){background:#e7f0ff}
+.task:nth-child(6n+4){background:#eaf5e4}
+.task:nth-child(6n+5){background:#fff0dc}
+.task input{width:23px;height:23px;accent-color:#d95698;flex-shrink:0}
+.task div{line-height:1.6}
+.time{font-size:14px;font-weight:bold}
+.activity{font-size:16px}
+.done .activity{text-decoration:line-through;opacity:.65}
+button{
+ border:0;border-radius:12px;padding:12px;
+ margin:5px 3px;font-size:14px;font-weight:bold;
+ background:#f4b0d0;color:#38243a;
+}
+button.secondary{background:#eee7ff}
+.history-row{padding:10px;background:#fff4f9;border-radius:10px;margin:8px 0;font-size:14px}
+.note{font-size:13px;color:#806c7d;line-height:1.6}
+footer{text-align:center;padding:18px;color:#9a6c8a}
+</style>
+</head>
+  <script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+  </script>
+<body>
+
+<h1>🌸 My Daily Routine 🌸</h1>
+<p class="subtitle">Small steps every day = Big dreams in the future ♡</p>
+
+<div class="card">
+ <p>📅 <b>Choose a day</b></p>
+ <input type="date" id="date">
+ <div class="stats" style="margin-top:16px">
+  <div class="stat"><strong id="count">0/17</strong><small>Tasks done ☑️</small></div>
+  <div class="stat"><strong id="percent">0%</strong><small>Progress 🌷</small></div>
+  <div class="stat"><strong id="streak">0 🔥</strong><small>Day streak</small></div>
+ </div>
+ <div class="progress"><div id="bar"></div></div>
+ <p id="message">You've got this! 💗</p>
+</div>
+
+<div class="card">
+ <div id="tasks"></div>
+ <button onclick="markAll()">✓ Mark all complete</button>
+ <button class="secondary" onclick="clearDay()">↻ Clear this day</button>
+ <p class="note">Your ticks are saved automatically in this browser. A streak counts fully completed days in a row. Use the same browser and device each day.</p>
+</div>
+
+<div class="card">
+ <h3>💖 Your recent history</h3>
+ <div id="history">Start ticking tasks to see your progress 🌱</div>
+</div>
+
+<footer>Progress, not perfection ♡</footer>
+
+<script>
+const routine=[
+["5:00 AM","Wake up"],
+["5:00 – 5:15 AM","Brush my teeth"],
+["5:15 – 5:30 AM","Exercise"],
+["5:30 – 6:00 AM","English practice"],
+["6:00 – 7:00 AM","NPTEL exam preparation"],
+["7:00 – 7:30 AM","Take a shower"],
+["7:30 – 8:00 AM","Drink water and eat dry fruits"],
+["8:00 – 9:00 AM","Complete college homework"],
+["9:00 – 10:00 AM","Get ready for college and travel"],
+["10:00 AM – 5:00 PM","Attend college"],
+["5:00 – 6:00 PM","Freshen up and have snacks"],
+["6:00 – 8:00 PM","GATE exam preparation"],
+["8:00 – 8:30 PM","Have dinner"],
+["8:30 – 9:00 PM","Use my mobile"],
+["9:00 – 9:30 PM","Read a book"],
+["9:30 – 10:00 PM","Brush my teeth and do skincare"],
+["10:00 PM","Go to sleep"]
+];
+
+const $=id=>document.getElementById(id);
+const today=()=>{
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+$("date").value=today();
+
+function getData(day){
+ try{return JSON.parse(localStorage.getItem("routine-"+day))||Array(17).fill(false)}
+ catch(e){return Array(17).fill(false)}
+}
+function saveData(data){
+ try{localStorage.setItem("routine-"+$("date").value,JSON.stringify(data))}
+ catch(e){alert("Browser storage is unavailable. Please enable site storage.")}
+}
+function draw(){
+ const data=getData($("date").value);
+ $("tasks").innerHTML="";
+ routine.forEach((t,i)=>{
+  const label=document.createElement("label");
+  label.className="task"+(data[i]?" done":"");
+  const cb=document.createElement("input");
+  cb.type="checkbox";cb.checked=!!data[i];
+  cb.addEventListener("change",()=>{
+   const fresh=getData($("date").value);
+   fresh[i]=cb.checked;saveData(fresh);draw();stats();history();
+  });
+  const text=document.createElement("div");
+  const time=document.createElement("div");time.className="time";time.textContent=t[0];
+  const activity=document.createElement("div");activity.className="activity";activity.textContent=t[1];
+  text.append(time,activity);label.append(cb,text);$("tasks").append(label);
+ });
+ stats();
+}
+function full(day){return getData(day).every(Boolean)}
+function stats(){
+ const data=getData($("date").value);
+ const n=data.filter(Boolean).length,p=Math.round(n/17*100);
+ $("count").textContent=n+"/17";
+ $("percent").textContent=p+"%";
+ $("bar").style.width=p+"%";
+ $("message").textContent=p===100?"Amazing! All tasks completed! 🎉":p>=50?"Great progress! Keep going 🌷":p>0?"Every small step counts 💗":"You've got this! Start with one task 🌱";
+ let d=new Date(),streak=0;
+ d.setHours(0,0,0,0);
+ if(!full(dayString(d)))d.setDate(d.getDate()-1);
+ while(full(dayString(d))&&streak<3650){streak++;d.setDate(d.getDate()-1)}
+ $("streak").textContent=streak+" 🔥";
+}
+function dayString(d){
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function markAll(){
+ saveData(Array(17).fill(true));draw();history();
+}
+function clearDay(){
+ if(confirm("Clear all ticks for this day?")){
+  saveData(Array(17).fill(false));draw();history();
+ }
+}
+function history(){
+ const host=$("history");host.innerHTML="";
+ let found=false,d=new Date();
+ for(let i=0;i<14;i++){
+  const day=dayString(d),n=getData(day).filter(Boolean).length;
+  if(n>0){
+   found=true;
+   const row=document.createElement("div");row.className="history-row";
+   row.textContent=day+" — "+n+"/17 tasks ("+Math.round(n/17*100)+"%)"+(n===17?" 🌟":"");
+   host.append(row);
+  }
+  d.setDate(d.getDate()-1);
+ }
+ if(!found)host.textContent="Your progress will appear here 🌱";
+}
+$("date").addEventListener("change",()=>{if($("date").value){draw();history()}});
+draw();history();
+</script>
+</body>
+</html>
